@@ -13,7 +13,7 @@ init_from = 'resume' # either 'resume' (from an out_dir) or a gpt2 variant (e.g.
 out_dir = 'out' # ignored if init_from is not 'resume'
 start = "\n" # or "<|endoftext|>" or etc. Can also specify a file, use as: "FILE:prompt.txt"
 num_samples = 5 # number of samples to draw
-max_new_tokens = 100 # number of tokens generated in each sample
+max_new_tokens = 500 # number of tokens generated in each sample
 temperature = 0.8 # 1.0 = no change, < 1.0 = less random, > 1.0 = more random, in predictions
 top_k = 200 # retain only the top_k most likely tokens, clamp others to have 0 probability
 seed = 1337
@@ -38,7 +38,7 @@ if init_from == 'resume':
     checkpoint = torch.load(ckpt_path, map_location=device)
     gptconf = GPTConfig(**checkpoint['model_args'])
     model = GPT(gptconf)
-    # model = RLHF(model, 'RL', discrete_reward=True)
+    model = RLHF(model, 'RL', discrete_reward=True)
     state_dict = checkpoint['model']
     unwanted_prefix = '_orig_mod.'
     for k,v in list(state_dict.items()):
@@ -81,10 +81,32 @@ if start.startswith('FILE:'):
 start_ids = encode(start)
 x = (torch.tensor(start_ids, dtype=torch.long, device=device)[None, ...])
 
+def reward(sequence, t='and'):
+    # decode_text = self.enc.decode(sequence.tolist())
+    # s_count = decode_text.lower().count('s')
+    # alpha_count = 0
+    # for char in decode_text.lower(): 
+    #     if char.isalpha():
+    #         alpha_count += 1
+    # if ((s_count/alpha_count) >= 0.15):
+    #     return torch.tensor([0.0, 1.0])
+    # else:
+    #     return torch.tensor([1.0, 0.0])
+    if ' the ' not in decode(sequence.tolist()):
+        # print('hello')
+        return torch.tensor([0.0, 1.0])
+    else:
+        return torch.tensor([1.0, 0.0])
+
 # run generation
 with torch.no_grad():
     with ctx:
         for k in range(num_samples):
-            y = model.generate(x, max_new_tokens, temperature=temperature, top_k=top_k)
-            print(decode(y[0].tolist()))
+            # y = model.generate(x, max_new_tokens, temperature=temperature, top_k=top_k)
+            y = model.generate(x, max_new_tokens, device, 32)[0]
+            for i in range(1):
+                text_i = y[i,:]
+                print(decode(text_i.tolist()))
+                print(f"Output Reward: {reward(text_i)[1]}")
+            # print(decode(y[0].tolist()))
             print('---------------')
