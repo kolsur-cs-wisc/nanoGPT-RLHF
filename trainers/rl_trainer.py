@@ -119,8 +119,7 @@ class GumbelTrainer(Trainer):
         model = self.init_model()
 
         rl_model = RLHF(model, self.mode, discrete_reward=self.config['discrete_reward'])
-
-
+        self.best_rets = float('-inf')
         # The current approach is to use a separate reward model because otherwise optimisation of the reward model changes upstream parameters impacting performance of the multihead
         # I therefore load the language model from 'out_dir' and the reward model from 'out_dir_multihead'
 
@@ -212,6 +211,7 @@ class GumbelTrainer(Trainer):
             eval_interval = self.config['eval_interval']
             if iter % eval_interval == 0:
                 t1 = time.time()
+                rets = np.mean(rews_all[-eval_interval:])
                 print(f'iter: {iter}, time: {t1-t0}')
                 print(f'rets: {np.mean(rews_all[-eval_interval:])}')
                 current_time = time.time()
@@ -224,4 +224,16 @@ class GumbelTrainer(Trainer):
                     try:
                         print(self.enc.decode(text_i.tolist()))
                     except:
-                        continue 
+                        continue
+                if rets > self.best_rets:
+                    self.best_rets = rets
+                    checkpoint = {
+                    'model': rl_model.state_dict(),
+                    'optimizer': gumbel_optimizer.state_dict(),
+                    'model_args': self.model_args,
+                    'iter_num': self.iter_num,
+                    'best_rets': self.best_rets,
+                    'config': self.config,
+                    }
+                    print(f"saving checkpoint to {self.config['out_dir']}")
+                    torch.save(checkpoint, os.path.join(self.config['out_dir'], 'ckpt.pt'))

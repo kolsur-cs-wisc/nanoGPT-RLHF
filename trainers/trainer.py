@@ -317,10 +317,10 @@ class Trainer():
             t0 = t1
             if self.iter_num % self.log_interval == 0 and self.master_process:
                 lossf = loss.item() # loss as float. note: this is a CPU-GPU sync point
-                if local_iter_num >= 5: # let the training loop settle a bit
-                    mfu = model.estimate_mfu(self.batch_size * self.world_size * self.gradient_accumulation_steps, dt)
-                    running_mfu = mfu if running_mfu == -1.0 else 0.9*running_mfu + 0.1*mfu
-                print(f"iter {self.iter_num}: loss {lossf:.4f}, time {dt*1000:.2f}ms, mfu {running_mfu*100:.2f}%")
+                # if local_iter_num >= 5: # let the training loop settle a bit
+                #     mfu = model.estimate_mfu(self.batch_size * self.world_size * self.gradient_accumulation_steps, dt)
+                #     running_mfu = mfu if running_mfu == -1.0 else 0.9*running_mfu + 0.1*mfu
+                print(f"iter {self.iter_num}: loss {lossf:.4f}, time {dt*1000:.2f}ms")
             self.iter_num += 1
             local_iter_num += 1
 

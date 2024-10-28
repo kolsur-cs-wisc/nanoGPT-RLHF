@@ -226,7 +226,7 @@ class ProbRewardModelTrainer(Trainer):
             test_reward_probs, _ = model(test_text_enc.to(self.device))
             actual_reward_probs = self.reward(test_text_enc[0].to(self.device))[1]
 
-            print("input: ", test_text[:30], f"expect {actual_reward_probs}, reward: {test_reward_probs[0][-1]} \n")
+            print("input test_text: ", test_text[:30], f"expect {actual_reward_probs}, reward: {test_reward_probs[0][-1]} \n")
         except:
             pass
 
