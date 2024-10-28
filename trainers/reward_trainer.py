@@ -6,6 +6,7 @@ import wandb
 import time, os
 from model import RLHF
 from trainers.trainer import Trainer
+import random
 
 # This one for reward models similar to InstructGPT paper (rewards based on comparisons)
 class RewardModelTrainer(Trainer):
@@ -192,9 +193,19 @@ class ProbRewardModelTrainer(Trainer):
         return x, y
     
     def reward(self, sequence, t='and'):
-        if t in self.enc.decode(sequence.tolist()):
+        # decode_text = self.enc.decode(sequence.tolist())
+        # s_count = decode_text.lower().count('s')
+        # alpha_count = 0
+        # for char in decode_text.lower(): 
+        #     if char.isalpha():
+        #         alpha_count += 1
+        # if ((s_count/alpha_count) >= 0.15):
+        #     return torch.tensor([0.0, 1.0])
+        # else:
+        #     return torch.tensor([1.0, 0.0])
+        if ' the ' not in self.enc.decode(sequence.tolist()):
             # print('hello')
-            return torch.tensor([0.0,1.0])
+            return torch.tensor([0.0, 1.0])
         else:
             return torch.tensor([1.0, 0.0])
 
@@ -212,13 +223,12 @@ class ProbRewardModelTrainer(Trainer):
             print("input: ", text[:30], f"expect {actual_reward_probs}, reward: {reward_probs[0][-1]} \n")
         except:
             pass
-        
         # test_text = text[:4] + 'z' + text[4 + 1:-1]
         test_text = list(text)
         test_text[3] = ' '
-        test_text[4] = 'a'
-        test_text[5] = 'n'
-        test_text[6] = 'd'
+        test_text[4] = 't'
+        test_text[5] = 'h'
+        test_text[6] = 'e'
         test_text[7] = ' '
         test_text = ''.join(test_text)
         try:
